@@ -1,4 +1,3 @@
-// redisClient.ts
 import { createClient } from 'redis';
 
 const redisClient = createClient({
@@ -6,8 +5,10 @@ const redisClient = createClient({
 	socket: {
 		host: 'redis-10202.c266.us-east-1-3.ec2.redns.redis-cloud.com',
 		port: 10202,
+		tls: true, // Enable TLS
 	},
 });
+
 redisClient.on('error', (err) => console.error('Redis Client Error', err));
 
 redisClient
