@@ -11,7 +11,7 @@ const app = express();
 
 app.use(express.json());
 const corsOptions = {
-	origin: ['https://frontend-flash-61iiaohr4-fyzanshaiks-projects.vercel.app', 'https://frontend-flash-phi.vercel.app', 'http://localhost:5173/dashboard'],
+	origin: ['https://frontend-flash-61iiaohr4-fyzanshaiks-projects.vercel.app', 'https://frontend-flash-phi.vercel.app', 'http://localhost:5173'],
 	methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 	credentials: true,
 };
