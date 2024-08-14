@@ -1,10 +1,10 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 import { sign } from 'jsonwebtoken';
 import { userSignUpSchema, userLoginSchema } from '../zod-type';
 import { AuthenticatedRequest } from '../utils/types';
-import { hash } from 'crypto';
+// import { hash } from 'crypto';
 
 const prisma = new PrismaClient();
 

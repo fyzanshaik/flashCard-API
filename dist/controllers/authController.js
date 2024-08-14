@@ -17,6 +17,7 @@ const bcrypt_1 = __importDefault(require("bcrypt"));
 const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = require("jsonwebtoken");
 const zod_type_1 = require("../zod-type");
+// import { hash } from 'crypto';
 const prisma = new client_1.PrismaClient();
 const signup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {

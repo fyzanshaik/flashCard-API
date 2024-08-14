@@ -1,9 +1,7 @@
-// flashCardController.ts
 import { Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { flashcardSchema } from '../zod-type';
 import { AuthenticatedRequest } from '../utils/types';
-import redisClient from '../redisClient';
 
 const prisma = new PrismaClient();
 
@@ -14,27 +12,12 @@ export const getAllCards = async (req: AuthenticatedRequest, res: Response) => {
 		let flashCards;
 
 		if (!user) {
-			const cachedData = await redisClient.get('publicFlashCards');
-			if (cachedData) {
-				console.log('Serving from cache');
-				return res.json(JSON.parse(cachedData));
-			}
-
 			flashCards = await prisma.publicFlashCard.findMany({
 				orderBy: {
 					id: 'asc',
 				},
 			});
-
-			await redisClient.setEx('publicFlashCards', 3600, JSON.stringify(flashCards)); // Cache for 1 hour
 		} else {
-			const cacheKey = `userFlashCards:${user.userId}`;
-			const cachedData = await redisClient.get(cacheKey);
-			if (cachedData) {
-				console.log('Serving from cache');
-				return res.json(JSON.parse(cachedData));
-			}
-
 			flashCards = await prisma.userFlashCard.findMany({
 				where: {
 					userId: user.userId,
@@ -43,8 +26,6 @@ export const getAllCards = async (req: AuthenticatedRequest, res: Response) => {
 					id: 'asc',
 				},
 			});
-
-			await redisClient.setEx(cacheKey, 3600, JSON.stringify(flashCards)); // Cache for 1 hour
 		}
 
 		res.json(flashCards);
@@ -58,8 +39,8 @@ export const addFlashCard = async (req: AuthenticatedRequest, res: Response) => 
 	const user = req.user;
 
 	try {
-		let newCard;
 		const data = flashcardSchema.parse(req.body);
+		let newCard;
 
 		if (!user) {
 			newCard = await prisma.publicFlashCard.create({
@@ -68,8 +49,6 @@ export const addFlashCard = async (req: AuthenticatedRequest, res: Response) => 
 					answer: data.answer,
 				},
 			});
-
-			await redisClient.del('publicFlashCards'); // Invalidate cache
 		} else {
 			newCard = await prisma.userFlashCard.create({
 				data: {
@@ -78,8 +57,6 @@ export const addFlashCard = async (req: AuthenticatedRequest, res: Response) => 
 					userId: user.userId,
 				},
 			});
-
-			await redisClient.del(`userFlashCards:${user.userId}`); // Invalidate cache
 		}
 
 		res.json(newCard);
@@ -95,7 +72,6 @@ export const editCard = async (req: AuthenticatedRequest, res: Response) => {
 
 	try {
 		const data = flashcardSchema.parse(req.body);
-
 		let updatedCard;
 
 		if (!user) {
@@ -106,8 +82,6 @@ export const editCard = async (req: AuthenticatedRequest, res: Response) => {
 					answer: data.answer,
 				},
 			});
-
-			await redisClient.del('publicFlashCards'); // Invalidate cache
 		} else {
 			updatedCard = await prisma.userFlashCard.update({
 				where: {
@@ -121,8 +95,6 @@ export const editCard = async (req: AuthenticatedRequest, res: Response) => {
 					answer: data.answer,
 				},
 			});
-
-			await redisClient.del(`userFlashCards:${user.userId}`); // Invalidate cache
 		}
 
 		res.json(updatedCard);
@@ -139,8 +111,6 @@ export const deleteCard = async (req: AuthenticatedRequest, res: Response) => {
 	try {
 		if (!user) {
 			await prisma.publicFlashCard.delete({ where: { id: Number(id) } });
-
-			await redisClient.del('publicFlashCards'); // Invalidate cache
 			res.json({ message: 'Public card deleted successfully' });
 		} else {
 			await prisma.userFlashCard.delete({
@@ -151,8 +121,6 @@ export const deleteCard = async (req: AuthenticatedRequest, res: Response) => {
 					},
 				},
 			});
-
-			await redisClient.del(`userFlashCards:${user.userId}`); // Invalidate cache
 			res.json({ message: 'User card deleted successfully' });
 		}
 	} catch (error) {

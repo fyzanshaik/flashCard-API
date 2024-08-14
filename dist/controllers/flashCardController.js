@@ -8,39 +8,23 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCard = exports.editCard = exports.addFlashCard = exports.getAllCards = void 0;
 const client_1 = require("@prisma/client");
 const zod_type_1 = require("../zod-type");
-const redisClient_1 = __importDefault(require("../redisClient"));
 const prisma = new client_1.PrismaClient();
 const getAllCards = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
     try {
         let flashCards;
         if (!user) {
-            const cachedData = yield redisClient_1.default.get('publicFlashCards');
-            if (cachedData) {
-                console.log('Serving from cache');
-                return res.json(JSON.parse(cachedData));
-            }
             flashCards = yield prisma.publicFlashCard.findMany({
                 orderBy: {
                     id: 'asc',
                 },
             });
-            yield redisClient_1.default.setEx('publicFlashCards', 3600, JSON.stringify(flashCards)); // Cache for 1 hour
         }
         else {
-            const cacheKey = `userFlashCards:${user.userId}`;
-            const cachedData = yield redisClient_1.default.get(cacheKey);
-            if (cachedData) {
-                console.log('Serving from cache');
-                return res.json(JSON.parse(cachedData));
-            }
             flashCards = yield prisma.userFlashCard.findMany({
                 where: {
                     userId: user.userId,
@@ -49,7 +33,6 @@ const getAllCards = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                     id: 'asc',
                 },
             });
-            yield redisClient_1.default.setEx(cacheKey, 3600, JSON.stringify(flashCards)); // Cache for 1 hour
         }
         res.json(flashCards);
     }
@@ -62,8 +45,8 @@ exports.getAllCards = getAllCards;
 const addFlashCard = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.user;
     try {
-        let newCard;
         const data = zod_type_1.flashcardSchema.parse(req.body);
+        let newCard;
         if (!user) {
             newCard = yield prisma.publicFlashCard.create({
                 data: {
@@ -71,7 +54,6 @@ const addFlashCard = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                     answer: data.answer,
                 },
             });
-            yield redisClient_1.default.del('publicFlashCards'); // Invalidate cache
         }
         else {
             newCard = yield prisma.userFlashCard.create({
@@ -81,7 +63,6 @@ const addFlashCard = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                     userId: user.userId,
                 },
             });
-            yield redisClient_1.default.del(`userFlashCards:${user.userId}`); // Invalidate cache
         }
         res.json(newCard);
     }
@@ -105,7 +86,6 @@ const editCard = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     answer: data.answer,
                 },
             });
-            yield redisClient_1.default.del('publicFlashCards'); // Invalidate cache
         }
         else {
             updatedCard = yield prisma.userFlashCard.update({
@@ -120,7 +100,6 @@ const editCard = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                     answer: data.answer,
                 },
             });
-            yield redisClient_1.default.del(`userFlashCards:${user.userId}`); // Invalidate cache
         }
         res.json(updatedCard);
     }
@@ -136,7 +115,6 @@ const deleteCard = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     try {
         if (!user) {
             yield prisma.publicFlashCard.delete({ where: { id: Number(id) } });
-            yield redisClient_1.default.del('publicFlashCards'); // Invalidate cache
             res.json({ message: 'Public card deleted successfully' });
         }
         else {
@@ -148,7 +126,6 @@ const deleteCard = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                     },
                 },
             });
-            yield redisClient_1.default.del(`userFlashCards:${user.userId}`); // Invalidate cache
             res.json({ message: 'User card deleted successfully' });
         }
     }

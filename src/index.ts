@@ -3,7 +3,7 @@ import cors from 'cors';
 import flashCardRoute from './routes/flashCardRoute';
 import authRoute from './routes/authRoute';
 import helloWorld from './routes/helloWorld';
-import { apiRateLimiter, authRateLimiter } from './rateLimiter';
+// import { apiRateLimiter, authRateLimiter } from './rateLimiter';
 
 const PORT = process.env.PORT || 3000;
 const app = express();
@@ -25,8 +25,8 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Route handlers
-app.use('/api', apiRateLimiter, flashCardRoute);
-app.use('/api/auth', authRateLimiter, authRoute);
+app.use('/api', flashCardRoute);
+app.use('/api/auth', authRoute);
 app.use('/', helloWorld);
 
 app.listen(PORT, () => {
