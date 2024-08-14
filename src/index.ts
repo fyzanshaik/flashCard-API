@@ -35,6 +35,9 @@ app.options('*', cors(corsOptions));
 app.use('/api', flashCardRoute);
 app.use('/api/auth', authRoute);
 app.use('/', helloWorld);
+app.get('/test-cors', (req, res) => {
+	res.send('CORS is working!');
+});
 
 app.listen(PORT, () => {
 	console.log(`Server is running on http://localhost:${PORT}`);
